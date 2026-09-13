@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .shadow-brutal {
+    box-shadow: 4px 4px 0px 0px #000000;
+  }
+  .shadow-brutal-lg {
+    box-shadow: 8px 8px 0px 0px #000000;
+  }
+}
