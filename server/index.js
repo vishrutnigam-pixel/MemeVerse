@@ -57,5 +57,25 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// AI Generation Endpoint
+app.post('/api/generate-image', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    console.log("DEBUG: Exact prompt reaching backend ->", prompt);
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt string is required _' });
+    }
+
+    const encodedPrompt = encodeURIComponent(prompt);
+    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=500&height=500&seed=${Math.floor(Math.random() * 1000)}`;
+
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('AI Generation Error:', err);
+    res.status(500).json({ error: 'Failed to generate image via AI _' });
+  }
+});
+
 const PORT = 5000;
 app.listen(PORT, () => console.log(`\n::: MEMEVERSE SERVER EXECUTING ON PORT ${PORT} :::`));

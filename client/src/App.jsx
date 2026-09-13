@@ -89,6 +89,11 @@ export default function App() {
   const [openPostId, setOpenPostId] = useState(null);
   const [commentText, setCommentText] = useState('');
 
+  // AI Studio States
+  const [useAiMode, setUseAiMode] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const [posts, setPosts] = useState([
     {
       id: 1,
@@ -136,6 +141,29 @@ export default function App() {
     localStorage.removeItem('username');
     setToken('');
     setUser('');
+  };
+
+  const handleGenerateAiImage = async () => {
+    if (!aiPrompt.trim()) return alert("Enter an AI prompt first!");
+    
+    setIsGenerating(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'AI generation failed');
+
+      const freshImageUrl = `${data.imageUrl}${data.imageUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      setPreviewUrl(freshImageUrl);
+    } catch (err) {
+      alert(`AI Error: ${err.message}`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   let bannerBg = "bg-[#B140FF]";
@@ -277,6 +305,7 @@ export default function App() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-7xl mx-auto items-start">
+          {/* SIDEBAR */}
           <div className="md:col-span-3 flex flex-col gap-6 md:sticky md:top-4">
             <div className={`border-4 border-black p-4 shadow-brutal text-white ${bannerBg}`}>
               <h2 className="text-xl font-black underline">VIBE CHECK</h2>
@@ -294,15 +323,75 @@ export default function App() {
             </div>
           </div>
 
+          {/* MAIN CARD FEED */}
           <div className="md:col-span-6 flex flex-col gap-8">
             <div className={`border-4 border-black p-6 ${boxBg}`}>
-              <h2 className="text-xl font-black uppercase mb-4 tracking-tight">POST_TO_{activeCategory}</h2>
-              <label className={`block border-4 border-dashed border-black min-h-[160px] flex flex-col items-center justify-center p-4 text-center my-4 cursor-pointer relative ${currentPage === 'cursed' ? 'bg-zinc-900 border-red-600' : 'bg-gray-50'}`}>
-                {previewUrl ? <img src={previewUrl} alt="Preview" className="max-h-[200px] object-contain border-2 border-black shadow-brutal" /> : <span className="font-black text-sm uppercase underline text-purple-600">SELECT MEME FILE</span>}
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-              </label>
-              <input type="text" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="TYPE_CAPTION_HERE..." className={`w-full border-2 border-black p-3 font-bold mb-4 focus:outline-none ${inputBg}`} />
-              <button onClick={handleLaunch} className={`w-full border-4 border-black font-black py-4 uppercase shadow-brutal transition-all cursor-pointer ${btnStyle}`}>LAUNCH_IT 🚀</button>
+              <div className="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
+                <h2 className="text-xl font-black uppercase tracking-tight">POST_TO_{activeCategory}</h2>
+                <button 
+                  onClick={() => setUseAiMode(!useAiMode)}
+                  className="text-xs font-black border-2 border-black px-2 py-1 bg-[#E4FF00] text-black shadow-brutal hover:bg-yellow-300 cursor-pointer uppercase"
+                >
+                  {useAiMode ? '📁 SWITCH_TO_UPLOAD' : '🤖 SWITCH_TO_AI_STUDIO'}
+                </button>
+              </div>
+
+              {/* MODE A: AI GENERATION STUDIO */}
+              {useAiMode ? (
+                <div className="mb-4 border-2 border-black p-3 bg-purple-100 space-y-3">
+                  <label className="block text-xs font-black uppercase text-black">AI_STUDIO_PROMPT_ENGINE:</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={aiPrompt} 
+                      onChange={(e) => setAiPrompt(e.target.value)} 
+                      placeholder="e.g. A funny futuristic cat coding React JS..." 
+                      className="flex-1 border-2 border-black p-2 font-bold text-xs bg-white text-black focus:outline-none"
+                    />
+                    <button 
+                      onClick={handleGenerateAiImage}
+                      disabled={isGenerating}
+                      className="border-2 border-black bg-black text-[#E4FF00] font-black px-4 text-xs shadow-brutal hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isGenerating ? 'GENERATING...' : 'GENERATE_✨'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* MODE B: STANDARD FILE UPLOAD */
+                <label className={`block border-4 border-dashed border-black min-h-[140px] flex flex-col items-center justify-center p-4 text-center my-4 cursor-pointer relative ${currentPage === 'cursed' ? 'bg-zinc-900 border-red-600' : 'bg-gray-50'}`}>
+                  {!previewUrl && <span className="font-black text-sm uppercase underline text-purple-600">SELECT MEME FILE FROM DISK</span>}
+                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                </label>
+              )}
+
+              {/* PREVIEW CONTAINER */}
+              {previewUrl && (
+                <div className="relative mb-4 border-4 border-black bg-black p-2">
+                  <img src={previewUrl} alt="Preview" className="max-h-[250px] object-contain mx-auto" />
+                  <button 
+                    onClick={() => setPreviewUrl('')} 
+                    className="absolute top-2 right-2 border border-black bg-red-500 text-white text-xs px-2 py-1 font-black cursor-pointer shadow-brutal"
+                  >
+                    CLEAR_X
+                  </button>
+                </div>
+              )}
+
+              <input 
+                type="text" 
+                value={caption} 
+                onChange={(e) => setCaption(e.target.value)} 
+                placeholder="TYPE_CAPTION_HERE..." 
+                className={`w-full border-2 border-black p-3 font-bold mb-4 focus:outline-none ${inputBg}`} 
+              />
+              
+              <button 
+                onClick={handleLaunch} 
+                className={`w-full border-4 border-black font-black py-4 uppercase shadow-brutal transition-all cursor-pointer ${btnStyle}`}
+              >
+                LAUNCH_IT 🚀
+              </button>
             </div>
 
             <div className="flex flex-col gap-6">
@@ -335,6 +424,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* STICKY RULES */}
           <div className="md:col-span-3 md:sticky md:top-4">
             <div className={`border-4 p-5 shadow-brutal md:rotate-2 ${stickyBg}`}>
               <h3 className="text-xl font-black border-b-2 border-current pb-2 mb-4 tracking-tight">{rulesTitle}</h3>
