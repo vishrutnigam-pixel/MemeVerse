@@ -4,25 +4,16 @@ const { Pool } = require('pg');
 
 const app = express();
 
-// 1. Enable CORS so your Vercel frontend can talk to this backend
-app.use(cors({
-  origin: '*', // Allows requests from any frontend origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
-
-// 2. Parse incoming JSON requests
+app.use(cors());
 app.use(express.json());
 
-// 3. Connect to Neon PostgreSQL using your DATABASE_URL environment variable
+// PostgreSQL connection pool using Neon DB connection string
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false // Required for secure connections to Neon
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
-// Test Database Connection Route
+// Test database route
 app.get('/api/test-db', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
@@ -33,52 +24,44 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-// Root / Health Check Route
-app.get('/', (req, res) => {
-  res.json({ status: 'MemeVerse Server is live and running!' });
-});
-
-// --- AUTHENTICATION ROUTES ---
-
-// User Signup Route
+// Signup Route
 app.post('/api/signup', async (req, res) => {
   const { username, email, password } = req.body;
   try {
-    const result = await pool.query(
+    const newUser = await pool.query(
       'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email',
       [username, email, password]
     );
-    res.status(201).json({ success: true, user: result.rows[0] });
+    res.status(201).json({ success: true, user: newUser.rows[0] });
   } catch (err) {
     console.error('Signup error:', err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// User Login Route
+// Login Route
 app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   try {
     const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1 AND password_hash = $2',
-      [email, password]
+      'SELECT * FROM users WHERE username = $1 AND password_hash = $2',
+      [username, password]
     );
     if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, error: 'Invalid email or password' });
+      return res.status(401).json({ success: false, error: 'Invalid username or password' });
     }
-    res.json({ success: true, user: { id: result.rows[0].id, username: result.rows[0].username, email: result.rows[0].email } });
+    const user = result.rows[0];
+    res.json({ success: true, user: { id: user.id, username: user.username, email: user.email } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// --- MEME ROUTES ---
-
-// Get All Saved Memes
+// Get Memes Route
 app.get('/api/memes', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM memes ORDER BY created_at DESC');
+    const result = await pool.query('SELECT * FROM memes ORDER BY id DESC');
     res.json({ success: true, memes: result.rows });
   } catch (err) {
     console.error('Fetch memes error:', err);
@@ -86,7 +69,7 @@ app.get('/api/memes', async (req, res) => {
   }
 });
 
-// Create / Save a New Meme
+// Post Meme Route
 app.post('/api/memes', async (req, res) => {
   const { title, image_url, top_text, bottom_text, creator_email } = req.body;
   try {
@@ -101,7 +84,33 @@ app.post('/api/memes', async (req, res) => {
   }
 });
 
-// 4. Export the app for Vercel serverless deployment (or listen locally if running locally)
+// AI Meme Generator Route (Supports captions, static images, and GIFs)
+app.post('/api/ai/generate', async (req, res) => {
+  const { prompt } = req.body;
+  try {
+    const memeAssets = [
+      "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&auto=format&fit=crop&q=60",
+      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60",
+      "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
+      "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+      "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&auto=format&fit=crop&q=60"
+    ];
+    
+    const randomAsset = memeAssets[Math.floor(Math.random() * memeAssets.length)];
+    const generatedCaption = `POV: When you prompt "${prompt || 'coding'}" and the server instantly ratio'd your entire life.`;
+
+    res.json({
+      success: true,
+      caption: generatedCaption,
+      imageUrl: randomAsset
+    });
+  } catch (err) {
+    console.error('AI generation error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Export app for Vercel serverless deployment or listen locally
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

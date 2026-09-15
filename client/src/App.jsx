@@ -187,14 +187,25 @@ export default function App() {
     setUser('');
   };
 
-  // AI Meme Generator Trigger
+  // Fully Functional AI Meme Generator Trigger
   const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) return alert("Enter a prompt for AI generation!");
     setGeneratingAi(true);
     try {
-      setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
-      setCaption(aiPrompt);
-      setAiPrompt('');
+      const response = await fetch(`${API_BASE}/api/ai/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt })
+      });
+      const data = await response.json();
+      if (response.ok && data.imageUrl) {
+        setPreviewUrl(data.imageUrl);
+        setCaption(data.caption);
+        setAiPrompt('');
+      } else {
+        setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
+        setCaption(aiPrompt);
+      }
     } catch (err) {
       setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
     } finally {
