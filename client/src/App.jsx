@@ -90,6 +90,8 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('fresh');
   const [activeCategory, setActiveCategory] = useState('#EXAM_PAIN');
   const [caption, setCaption] = useState('');
+  const [topText, setTopText] = useState('');
+  const [bottomText, setBottomText] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
   const [openPostId, setOpenPostId] = useState(null);
   const [commentText, setCommentText] = useState('');
@@ -110,6 +112,8 @@ export default function App() {
           id: m.id,
           caption: m.title || m.caption,
           image: m.image_url || m.image,
+          top_text: m.top_text || '',
+          bottom_text: m.bottom_text || '',
           category: activeCategory,
           type: 'fresh',
           timestamp: 'JUST NOW',
@@ -140,6 +144,8 @@ export default function App() {
       id: 1,
       caption: "Me looking at my clean code template knowing damn well it won't work on the first run.",
       image: "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
+      top_text: "CLEAN CODE TEMPLATE",
+      bottom_text: "DOES NOT COMPILE",
       category: "#SHITPOSTING",
       type: "fresh",
       timestamp: "2 MINS AGO",
@@ -184,7 +190,7 @@ export default function App() {
     setUser('');
   };
 
-  // Smart AI Meme & GIF Generator Trigger
+  // Smart AI Meme Generator with Funky Impact Font Taglines
   const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) return alert("Enter a prompt for AI generation!");
     setGeneratingAi(true);
@@ -197,11 +203,14 @@ export default function App() {
       const data = await response.json();
       if (response.ok && data.imageUrl) {
         setPreviewUrl(data.imageUrl);
-        setCaption(data.caption);
+        setTopText(data.top_text || '');
+        setBottomText(data.bottom_text || '');
+        setCaption(data.caption || aiPrompt);
         setAiPrompt('');
       } else {
         setPreviewUrl("https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif");
-        setCaption(aiPrompt);
+        setTopText("AI ERROR");
+        setBottomText(aiPrompt.toUpperCase());
       }
     } catch (err) {
       setPreviewUrl("https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif");
@@ -256,10 +265,10 @@ export default function App() {
   const handleLaunch = async () => {
     if (!previewUrl && !caption.trim()) return alert("Enter text or attach an image file!");
     const newPost = {
-      title: caption || "System override description _",
+      title: caption || topText || "System override description _",
       image_url: previewUrl || "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
-      top_text: "",
-      bottom_text: "",
+      top_text: topText,
+      bottom_text: bottomText,
       creator_email: user
     };
 
@@ -275,6 +284,8 @@ export default function App() {
     }
 
     setCaption('');
+    setTopText('');
+    setBottomText('');
     setPreviewUrl('');
   };
 
@@ -412,11 +423,39 @@ export default function App() {
                 </button>
               </div>
 
-              <label className={`block border-4 border-dashed border-black min-h-[160px] flex flex-col items-center justify-center p-4 text-center my-4 cursor-pointer relative ${currentPage === 'cursed' ? 'bg-zinc-900 border-red-600' : 'bg-gray-50'}`}>
-                {previewUrl ? <img src={previewUrl} alt="Preview" className="max-h-[200px] object-contain border-2 border-black shadow-brutal" /> : <span className="font-black text-sm uppercase underline text-purple-600">SELECT MEME FILE OR USE AI</span>}
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-              </label>
-              <input type="text" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="TYPE_CAPTION_HERE..." className={`w-full border-2 border-black p-3 font-bold mb-4 focus:outline-none ${inputBg}`} />
+              {/* IMAGE PREVIEW CONTAINER WITH IMPACT FONT OVERLAYS */}
+              <div className={`border-4 border-dashed border-black min-h-[180px] flex flex-col items-center justify-center p-2 text-center my-4 relative overflow-hidden ${currentPage === 'cursed' ? 'bg-zinc-900 border-red-600' : 'bg-gray-50'}`}>
+                {previewUrl ? (
+                  <div className="relative w-full flex justify-center items-center">
+                    <img src={previewUrl} alt="Preview" className="max-h-[240px] object-contain border-2 border-black shadow-brutal w-full" />
+                    {/* Top Impact Tagline */}
+                    {topText && (
+                      <div className="absolute top-2 left-0 right-0 px-2 text-center font-black text-xl md:text-2xl tracking-wider text-white uppercase" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0px 3px 6px rgba(0,0,0,0.9)' }}>
+                        {topText}
+                      </div>
+                    )}
+                    {/* Bottom Impact Tagline */}
+                    {bottomText && (
+                      <div className="absolute bottom-2 left-0 right-0 px-2 text-center font-black text-xl md:text-2xl tracking-wider text-white uppercase" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0px 3px 6px rgba(0,0,0,0.9)' }}>
+                        {bottomText}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <label className="cursor-pointer w-full py-8">
+                    <span className="font-black text-sm uppercase underline text-purple-600">SELECT MEME FILE OR USE AI GEN</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                  </label>
+                )}
+              </div>
+
+              {/* Tagline Inputs */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <input type="text" value={topText} onChange={(e) => setTopText(e.target.value)} placeholder="TOP TAGLINE..." className={`border-2 border-black p-2 font-bold text-xs uppercase ${inputBg}`} />
+                <input type="text" value={bottomText} onChange={(e) => setBottomText(e.target.value)} placeholder="BOTTOM TAGLINE..." className={`border-2 border-black p-2 font-bold text-xs uppercase ${inputBg}`} />
+              </div>
+
+              <input type="text" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="POST DESCRIPTION / TITLE..." className={`w-full border-2 border-black p-3 font-bold mb-4 focus:outline-none ${inputBg}`} />
               <button onClick={handleLaunch} className={`w-full border-4 border-black font-black py-4 uppercase shadow-brutal transition-all cursor-pointer ${btnStyle}`}>LAUNCH_IT 🚀</button>
             </div>
 
@@ -430,7 +469,24 @@ export default function App() {
                 filteredPosts.map(post => (
                   <div key={post.id} className={`border-4 p-4 ${currentPage === 'cursed' ? 'bg-[#111111] text-gray-100 border-red-600 shadow-[6px_6px_0px_0px_rgba(220,38,38,1)]' : 'bg-white text-black border-black shadow-brutal'}`}>
                     <p className="font-bold mb-4 text-sm">{post.caption}</p>
-                    {post.image && <img src={post.image} alt="Meme" className="w-full max-h-[350px] object-contain border-2 border-black mb-4 mx-auto" />}
+                    
+                    {/* Meme Image Feed Card with Impact Font Overlays */}
+                    {post.image && (
+                      <div className="relative w-full flex justify-center items-center mb-4">
+                        <img src={post.image} alt="Meme" className="w-full max-h-[350px] object-contain border-2 border-black mx-auto" />
+                        {post.top_text && (
+                          <div className="absolute top-3 left-0 right-0 px-4 text-center font-black text-2xl tracking-wider text-white uppercase" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0px 4px 8px rgba(0,0,0,0.9)' }}>
+                            {post.top_text}
+                          </div>
+                        )}
+                        {post.bottom_text && (
+                          <div className="absolute bottom-3 left-0 right-0 px-4 text-center font-black text-2xl tracking-wider text-white uppercase" style={{ textShadow: '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0px 4px 8px rgba(0,0,0,0.9)' }}>
+                            {post.bottom_text}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center border-t-2 border-current pt-3">
                       <button onClick={() => handleVote(post.id)} className="border-2 border-black bg-[#E4FF00] text-black font-black text-xs px-3 py-1 shadow-brutal cursor-pointer">🔺 RATIO_ {post.votes}</button>
                       <button onClick={() => setOpenPostId(openPostId === post.id ? null : post.id)} className="text-xs font-black border-2 border-black px-3 py-1 shadow-brutal bg-[#FFDEE9] text-black cursor-pointer">💬 COMMENTS ({post.comments.length})_</button>

@@ -69,13 +69,13 @@ app.get('/api/memes', async (req, res) => {
   }
 });
 
-// Post Meme Route
+// Post Meme Route (Supports top text and bottom text)
 app.post('/api/memes', async (req, res) => {
   const { title, image_url, top_text, bottom_text, creator_email } = req.body;
   try {
     const result = await pool.query(
       'INSERT INTO memes (title, image_url, top_text, bottom_text, creator_email) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [title, image_url, top_text, bottom_text, creator_email]
+      [title, image_url, top_text || '', bottom_text || '', creator_email]
     );
     res.status(201).json({ success: true, meme: result.rows[0] });
   } catch (err) {
@@ -84,35 +84,38 @@ app.post('/api/memes', async (req, res) => {
   }
 });
 
-// Smart AI Meme & GIF Generator Route
+// Smart AI Meme & GIF Generator Route with Taglines
 app.post('/api/ai/generate', async (req, res) => {
   const { prompt } = req.body;
   try {
     const lowerPrompt = (prompt || '').toLowerCase();
     let selectedImage = "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif";
+    let topText = "WHEN YOU TYPE A PROMPT";
+    let bottomText = "AND HOPE THE SERVER LIVES";
 
     if (lowerPrompt.includes('cat') || lowerPrompt.includes('dance') || lowerPrompt.includes('kitten')) {
       selectedImage = "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif";
+      topText = "ME AT 3 AM";
+      bottomText = "DANCING ON UNFIXED BUGS";
     } else if (lowerPrompt.includes('code') || lowerPrompt.includes('bug') || lowerPrompt.includes('error') || lowerPrompt.includes('exam')) {
       selectedImage = "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif";
+      topText = "MY CODE LOOKS CLEAN";
+      bottomText = "SEGMENTATION FAULT (CORE DUMPED)";
     } else if (lowerPrompt.includes('hack') || lowerPrompt.includes('matrix') || lowerPrompt.includes('cyber')) {
       selectedImage = "https://media.giphy.com/media/10JhviFuU2gWI6/giphy.gif";
+      topText = "HACKING THE MAINFRAME";
+      bottomText = "FORGETTING SEMICOLON";
     } else {
-      const memeGifs = [
-        "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
-        "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
-        "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif",
-        "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif"
-      ];
-      selectedImage = memeGifs[Math.floor(Math.random() * memeGifs.length)];
+      topText = `POV: ${prompt.toUpperCase()}`;
+      bottomText = "ABSOLUTE DISASTER";
     }
-
-    const generatedCaption = `POV: When you generate "${prompt}" and reality immediately breaks.`;
 
     res.json({
       success: true,
-      caption: generatedCaption,
-      imageUrl: selectedImage
+      top_text: topText,
+      bottom_text: bottomText,
+      imageUrl: selectedImage,
+      caption: `${topText} — ${bottomText}`
     });
   } catch (err) {
     console.error('AI generation error:', err);
