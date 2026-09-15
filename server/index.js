@@ -84,30 +84,60 @@ app.post('/api/memes', async (req, res) => {
   }
 });
 
-// Smart AI Meme & GIF Generator Route with Taglines
+// Smart AI Meme & GIF Generator Route with Diverse Pool & Taglines
 app.post('/api/ai/generate', async (req, res) => {
   const { prompt } = req.body;
   try {
     const lowerPrompt = (prompt || '').toLowerCase();
-    let selectedImage = "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif";
-    let topText = "WHEN YOU TYPE A PROMPT";
-    let bottomText = "AND HOPE THE SERVER LIVES";
+    
+    // Expanded reliable meme & reaction GIF pool categorized by themes
+    const memePools = {
+      coding: [
+        "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif",
+        "https://media.giphy.com/media/XbydQW20p3zTW/giphy.gif",
+        "https://media.giphy.com/media/9JkNBO94vj507vFwL1/giphy.gif"
+      ],
+      cats: [
+        "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
+        "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
+        "https://media.giphy.com/media/5VKbvrjxpUJCM/giphy.gif"
+      ],
+      hacking: [
+        "https://media.giphy.com/media/10JhviFuU2gWI6/giphy.gif",
+        "https://media.giphy.com/media/ZOwV9pYt0n39f7nE2i/giphy.gif"
+      ],
+      chaos: [
+        "https://media.giphy.com/media/9J7tdYltWyXII/giphy.gif",
+        "https://media.giphy.com/media/5nsiFvjui0HZe/giphy.gif",
+        "https://media.giphy.com/media/7rj2Zgtt3gomY/giphy.gif",
+        "https://media.giphy.com/media/QMHoU66sBXqqLqYvGO/giphy.gif"
+      ]
+    };
 
-    if (lowerPrompt.includes('cat') || lowerPrompt.includes('dance') || lowerPrompt.includes('kitten')) {
-      selectedImage = "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif";
-      topText = "ME AT 3 AM";
-      bottomText = "DANCING ON UNFIXED BUGS";
-    } else if (lowerPrompt.includes('code') || lowerPrompt.includes('bug') || lowerPrompt.includes('error') || lowerPrompt.includes('exam')) {
-      selectedImage = "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif";
-      topText = "MY CODE LOOKS CLEAN";
-      bottomText = "SEGMENTATION FAULT (CORE DUMPED)";
-    } else if (lowerPrompt.includes('hack') || lowerPrompt.includes('matrix') || lowerPrompt.includes('cyber')) {
-      selectedImage = "https://media.giphy.com/media/10JhviFuU2gWI6/giphy.gif";
-      topText = "HACKING THE MAINFRAME";
-      bottomText = "FORGETTING SEMICOLON";
+    let selectedImage = "";
+    let topText = "";
+    let bottomText = "";
+
+    if (lowerPrompt.includes('cat') || lowerPrompt.includes('dance') || lowerPrompt.includes('kitten') || lowerPrompt.includes('pet')) {
+      const pool = memePools.cats;
+      selectedImage = pool[Math.floor(Math.random() * pool.length)];
+      topText = `WHEN YOU CODE ALL NIGHT`;
+      bottomText = `AND THE CAT WALKS ON THE KEYBOARD`;
+    } else if (lowerPrompt.includes('code') || lowerPrompt.includes('bug') || lowerPrompt.includes('error') || lowerPrompt.includes('exam') || lowerPrompt.includes('fail')) {
+      const pool = memePools.coding;
+      selectedImage = pool[Math.floor(Math.random() * pool.length)];
+      topText = `FIXING ONE BUG`;
+      bottomText = `CREATING 47 NEW ONES`;
+    } else if (lowerPrompt.includes('hack') || lowerPrompt.includes('matrix') || lowerPrompt.includes('cyber') || lowerPrompt.includes('terminal')) {
+      const pool = memePools.hacking;
+      selectedImage = pool[Math.floor(Math.random() * pool.length)];
+      topText = `INSPECTION ELEMENT`;
+      bottomText = `HACKERMAN`;
     } else {
+      const allPools = [...memePools.chaos, ...memePools.coding, ...memePools.cats];
+      selectedImage = allPools[Math.floor(Math.random() * allPools.length)];
       topText = `POV: ${prompt.toUpperCase()}`;
-      bottomText = "ABSOLUTE DISASTER";
+      bottomText = "ABSOLUTE CHAOS";
     }
 
     res.json({
