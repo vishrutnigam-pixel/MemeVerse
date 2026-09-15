@@ -1,9 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Trophy, Flame, Sparkles, MessageSquare, Heart, Share2, 
-  Upload, User, LogIn, LogOut, Sun, Moon, Zap, Shield, 
-  TrendingUp, Award, Image as ImageIcon, Send, RefreshCw, X, AlertCircle
-} from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
 
@@ -16,7 +11,7 @@ export default function App() {
   
   // Modals & UI States
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  const [authMode, setAuthMode] = useState('login');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [notification, setNotification] = useState(null);
 
@@ -34,13 +29,12 @@ export default function App() {
   // Canvas background ref
   const canvasRef = useRef(null);
 
-  // Trigger notification banner
   const notify = (msg, type = 'info') => {
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Matrix/Particle Background Effect
+  // Canvas background particle effect
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -87,7 +81,7 @@ export default function App() {
     };
   }, [theme]);
 
-  // Fetch Memes from API
+  // Fetch Memes
   const fetchMemes = async () => {
     setLoadingMemes(true);
     try {
@@ -96,7 +90,6 @@ export default function App() {
         const data = await res.json();
         setMemes(data);
       } else {
-        // Fallback demo memes if backend table is empty
         setMemes([
           { id: 1, title: 'When the Vercel build finally succeeds', image_url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=600&q=80', upvotes: 142, downvotes: 3 },
           { id: 2, title: 'Debugging in production like a boss', image_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80', upvotes: 89, downvotes: 12 }
@@ -113,7 +106,7 @@ export default function App() {
     fetchMemes();
   }, []);
 
-  // Authentication Logic
+  // Authentication Handler
   const handleAuth = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -151,7 +144,7 @@ export default function App() {
     notify('Logged out successfully', 'info');
   };
 
-  // Upvote / Downvote Logic
+  // Voting Handler
   const handleVote = async (id, type) => {
     setMemes(memes.map(m => {
       if (m.id === id) {
@@ -171,11 +164,11 @@ export default function App() {
         body: JSON.stringify({ type })
       });
     } catch (err) {
-      // Quiet fail for optimistic UI updates
+      // Quiet catch for UI updates
     }
   };
 
-  // Submit New Meme
+  // Create Meme Handler
   const handleCreateMeme = async (e) => {
     e.preventDefault();
     if (!memeTitle || !memeUrl) return;
@@ -208,7 +201,6 @@ export default function App() {
     <div className={`min-h-screen relative font-sans transition-colors duration-200 ${
       theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-amber-50 text-slate-900'
     }`}>
-      {/* Background Effect Canvas */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-40" />
 
       {/* Notification Toast */}
@@ -217,12 +209,11 @@ export default function App() {
           notification.type === 'error' ? 'bg-red-500 text-white border-black' :
           notification.type === 'success' ? 'bg-green-400 text-black border-black' : 'bg-yellow-300 text-black border-black'
         }`}>
-          <AlertCircle size={20} />
-          {notification.msg}
+          ⚡ {notification.msg}
         </div>
       )}
 
-      {/* Navigation Header */}
+      {/* Header */}
       <header className="sticky top-0 z-40 border-b-4 border-black bg-yellow-400 text-black p-4 shadow-[0_4px_0_0_rgba(0,0,0,1)]">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('feed')}>
@@ -235,67 +226,65 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 border-2 border-black bg-white text-black font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none"
+              className="p-2 border-2 border-black bg-white text-black font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
             >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              {theme === 'dark' ? '☀️' : '🌙'}
             </button>
 
             {user ? (
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setShowUploadModal(true)}
-                  className="px-4 py-2 border-2 border-black bg-emerald-400 text-black font-black uppercase flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  className="px-4 py-2 border-2 border-black bg-emerald-400 text-black font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                 >
-                  <Upload size={18} /> Upload
+                  📤 Upload
                 </button>
                 <button 
                   onClick={handleLogout}
                   className="p-2 border-2 border-black bg-rose-500 text-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                 >
-                  <LogOut size={20} />
+                  🚪 Logout
                 </button>
               </div>
             ) : (
               <button 
                 onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
-                className="px-5 py-2 border-2 border-black bg-cyan-400 text-black font-black uppercase flex items-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                className="px-5 py-2 border-2 border-black bg-cyan-400 text-black font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               >
-                <LogIn size={18} /> Join / Sign In
+                🔑 Join / Sign In
               </button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <main className="max-w-4xl mx-auto p-4 md:p-6 relative z-10">
-        {/* Navigation Tabs */}
         <div className="flex gap-4 mb-8">
           <button 
             onClick={() => setActiveTab('feed')}
-            className={`px-6 py-3 border-4 border-black font-black uppercase text-lg flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
+            className={`px-6 py-3 border-4 border-black font-black uppercase text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
               activeTab === 'feed' ? 'bg-orange-500 text-white' : 'bg-white text-black'
             }`}
           >
-            <Flame size={22} /> Trending Feed
+            🔥 Trending Feed
           </button>
           <button 
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-6 py-3 border-4 border-black font-black uppercase text-lg flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
+            className={`px-6 py-3 border-4 border-black font-black uppercase text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
               activeTab === 'leaderboard' ? 'bg-purple-500 text-white' : 'bg-white text-black'
             }`}
           >
-            <Trophy size={22} /> Hall of Fame
+            🏆 Hall of Fame
           </button>
         </div>
 
-        {/* Tab 1: Meme Feed */}
+        {/* Tab 1: Feed */}
         {activeTab === 'feed' && (
           <div className="space-y-6">
             {loadingMemes ? (
               <div className="p-8 border-4 border-black bg-white text-black font-black text-center text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <RefreshCw size={28} className="animate-spin mx-auto mb-2" />
-                LOADING MEMES FROM NEON POSTGRES...
+                ⏳ LOADING MEMES FROM NEON POSTGRES...
               </div>
             ) : memes.length === 0 ? (
               <div className="p-8 border-4 border-black bg-white text-black font-black text-center text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -312,13 +301,13 @@ export default function App() {
                     <div className="flex gap-2">
                       <button 
                         onClick={() => handleVote(meme.id, 'up')}
-                        className="px-4 py-2 border-2 border-black bg-green-400 font-black flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        className="px-4 py-2 border-2 border-black bg-green-400 font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                       >
                         ▲ {meme.upvotes}
                       </button>
                       <button 
                         onClick={() => handleVote(meme.id, 'down')}
-                        className="px-4 py-2 border-2 border-black bg-red-400 font-black flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        className="px-4 py-2 border-2 border-black bg-red-400 font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                       >
                         ▼ {meme.downvotes}
                       </button>
@@ -330,7 +319,7 @@ export default function App() {
                       }}
                       className="p-2 border-2 border-black bg-yellow-300 font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                     >
-                      <Share2 size={20} />
+                      🔗 Share
                     </button>
                   </div>
                 </div>
@@ -342,8 +331,8 @@ export default function App() {
         {/* Tab 2: Leaderboard */}
         {activeTab === 'leaderboard' && (
           <div className="border-4 border-black bg-white text-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <h2 className="text-3xl font-black uppercase border-b-4 border-black pb-3 mb-6 flex items-center gap-2">
-              <Award className="text-yellow-500" size={32} /> Top Rated Creators
+            <h2 className="text-3xl font-black uppercase border-b-4 border-black pb-3 mb-6">
+              👑 Top Rated Creators
             </h2>
             <div className="space-y-4">
               {[
@@ -375,7 +364,7 @@ export default function App() {
               onClick={() => setShowAuthModal(false)}
               className="absolute top-4 right-4 p-1 border-2 border-black bg-red-400 font-bold"
             >
-              <X size={20} />
+              ✖
             </button>
             <h2 className="text-2xl font-black uppercase border-b-4 border-black pb-2 mb-4">
               {authMode === 'login' ? 'Sign In to MemeVerse' : 'Create Account'}
@@ -429,7 +418,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Upload Meme Modal */}
+      {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="border-4 border-black bg-white text-black p-6 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] relative">
@@ -437,7 +426,7 @@ export default function App() {
               onClick={() => setShowUploadModal(false)}
               className="absolute top-4 right-4 p-1 border-2 border-black bg-red-400 font-bold"
             >
-              <X size={20} />
+              ✖
             </button>
             <h2 className="text-2xl font-black uppercase border-b-4 border-black pb-2 mb-4">Post a Meme</h2>
             <form onSubmit={handleCreateMeme} className="space-y-4">

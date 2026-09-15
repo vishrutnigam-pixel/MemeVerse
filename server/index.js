@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 
 const app = express();
 
-// Explicit CORS Headers to prevent Vercel blocking cross-domain auth
+// Universal CORS policy allowing Vercel cross-origin requests
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -14,7 +14,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Initialize Neon PostgreSQL Pool
+// Initialize Neon PostgreSQL Database Connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -22,7 +22,7 @@ const pool = new Pool({
   }
 });
 
-// Automatically create database tables if they do not exist
+// Initialize database schemas dynamically
 async function initDb() {
   try {
     const client = await pool.connect();
@@ -50,18 +50,32 @@ async function initDb() {
 
     client.release();
   } catch (err) {
-    console.error('::: NEON DB CONNECTION ERROR :::', err.message);
+    console.error('::: NEON DB INITIALIZATION ERROR :::', err.message);
   }
 }
 
 initDb();
 
-// Test Route
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+// Server Health Verification Endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()');
+    res.json({ 
+      status: 'ok', 
+      database: 'Connected', 
+      dbTime: result.rows[0].now, 
+      timestamp: new Date() 
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      status: 'error', 
+      database: 'Disconnected', 
+      error: err.message 
+    });
+  }
 });
 
-// Export app for Vercel Serverless runtime
+// Export app for Vercel Serverless Function engine
 module.exports = app;
 
 if (process.env.NODE_ENV !== 'production') {
