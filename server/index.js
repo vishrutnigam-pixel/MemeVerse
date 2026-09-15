@@ -1,81 +1,70 @@
+require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
 
 const app = express();
+
+// Explicit CORS Headers to prevent Vercel blocking cross-domain auth
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
-app.use(cors());
 
-const MONGO_URI = 'mongodb://127.0.0.1:27017/memeverse_db';
-const JWT_SECRET = 'MEMEVERSE_BRUTAL_SECRET_KEY';
-
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('\n::: MONGO_DB CONNECTED SUCCESSFULLY :::\n'))
-  .catch(err => console.error('Database connection breakdown:', err));
-
-// User Schema
-const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
-});
-const User = mongoose.model('User', UserSchema);
-
-// Authentication Routes
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Missing credentials _' });
-
-    const existingUser = await User.findOne({ username });
-    if (existingUser) return res.status(400).json({ error: 'Username already claimed _' });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword });
-    await newUser.save();
-
-    res.status(201).json({ message: 'User spawned successfully!' });
-  } catch (err) {
-    res.status(500).json({ error: 'Internal system crash during registration' });
+// Initialize Neon PostgreSQL Pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+// Automatically create database tables if they do not exist
+async function initDb() {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ error: 'User does not exist _' });
+    const client = await pool.connect();
+    console.log('::: CONNECTED TO NEON POSTGRESQL DATABASE :::');
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: 'Invalid authentication vector _' });
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, username: user.username });
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS memes (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        image_url TEXT NOT NULL,
+        upvotes INT DEFAULT 0,
+        downvotes INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    client.release();
   } catch (err) {
-    res.status(500).json({ error: 'Internal server breakdown' });
+    console.error('::: NEON DB CONNECTION ERROR :::', err.message);
   }
+}
+
+initDb();
+
+// Test Route
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// AI Generation Endpoint
-app.post('/api/generate-image', async (req, res) => {
-  try {
-    const { prompt } = req.body;
-    console.log("DEBUG: Exact prompt reaching backend ->", prompt);
+// Export app for Vercel Serverless runtime
+module.exports = app;
 
-    if (!prompt) {
-      return res.status(400).json({ error: 'Prompt string is required _' });
-    }
-
-    const encodedPrompt = encodeURIComponent(prompt);
-    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=500&height=500&seed=${Math.floor(Math.random() * 1000)}`;
-
-    res.json({ imageUrl });
-  } catch (err) {
-    console.error('AI Generation Error:', err);
-    res.status(500).json({ error: 'Failed to generate image via AI _' });
-  }
-});
-
-const PORT = 5000;
-app.listen(PORT, () => console.log(`\n::: MEMEVERSE SERVER EXECUTING ON PORT ${PORT} :::`));
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`::: SERVER RUNNING ON PORT ${PORT} :::`));
+}

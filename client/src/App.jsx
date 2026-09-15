@@ -1,3 +1,14 @@
+// At top of client/src/App.jsx:
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+
+// Example request update inside login/signup/auth functions:
+const response = await fetch(`${API_BASE}/api/auth/login`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ username, password })
+});
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
