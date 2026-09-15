@@ -76,7 +76,6 @@ const SpecialEffectsBackground = ({ type }) => {
 // 2. MASTER APPLICATION CONTAINER
 // ==========================================
 export default function App() {
-  // Dynamically uses Vercel environment variable or falls back to local server
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   // Auth Session State
@@ -100,7 +99,6 @@ export default function App() {
 
   const [posts, setPosts] = useState([]);
 
-  // Fetch memes from backend API with error banner handling
   const fetchMemes = async () => {
     setLoadingMemes(true);
     setBackendError(false);
@@ -141,7 +139,7 @@ export default function App() {
     {
       id: 1,
       caption: "Me looking at my clean code template knowing damn well it won't work on the first run.",
-      image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&auto=format&fit=crop&q=60",
+      image: "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
       category: "#SHITPOSTING",
       type: "fresh",
       timestamp: "2 MINS AGO",
@@ -150,7 +148,6 @@ export default function App() {
     }
   ];
 
-  // Handle Authentication with Backend
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -187,7 +184,7 @@ export default function App() {
     setUser('');
   };
 
-  // Fully Functional AI Meme Generator Trigger
+  // Smart AI Meme & GIF Generator Trigger
   const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) return alert("Enter a prompt for AI generation!");
     setGeneratingAi(true);
@@ -203,17 +200,16 @@ export default function App() {
         setCaption(data.caption);
         setAiPrompt('');
       } else {
-        setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
+        setPreviewUrl("https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif");
         setCaption(aiPrompt);
       }
     } catch (err) {
-      setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
+      setPreviewUrl("https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif");
     } finally {
       setGeneratingAi(false);
     }
   };
 
-  // Dynamic Theme Definitions
   let bannerBg = "bg-[#B140FF]";
   let boxBg = "bg-white text-black border-black shadow-brutal";
   let activeItemClass = "bg-[#E4FF00] text-black border-black";
@@ -261,7 +257,7 @@ export default function App() {
     if (!previewUrl && !caption.trim()) return alert("Enter text or attach an image file!");
     const newPost = {
       title: caption || "System override description _",
-      image_url: previewUrl || "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&auto=format&fit=crop&q=60",
+      image_url: previewUrl || "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
       top_text: "",
       bottom_text: "",
       creator_email: user
@@ -295,7 +291,6 @@ export default function App() {
 
   const filteredPosts = posts.filter(post => post.category === activeCategory);
 
-  // AUTH SCREEN VIEW
   if (!token) {
     return (
       <div className="min-h-screen relative flex items-center justify-center p-4">
@@ -357,13 +352,11 @@ export default function App() {
     );
   }
 
-  // MAIN DASHBOARD VIEW
   return (
     <div className="min-h-screen relative p-4 selection:bg-yellow-300">
       <SpecialEffectsBackground type={currentPage} />
       
       <div className="relative z-10">
-        {/* HEADER NAVBAR */}
         <header className={`border-4 p-4 mb-6 flex justify-between items-center shadow-brutal ${currentPage === 'cursed' ? 'bg-[#111] text-white border-red-600' : 'bg-white text-black border-black'}`}>
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => setCurrentPage('fresh')}>
             <div className="bg-[#E4FF00] text-black border-2 border-black font-black text-2xl px-3 py-1 shadow-brutal">M</div>
@@ -380,9 +373,7 @@ export default function App() {
           </div>
         </header>
 
-        {/* WORKSPACE CONTENT GRID */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-7xl mx-auto items-start">
-          {/* SIDEBAR */}
           <div className="md:col-span-3 flex flex-col gap-6 md:sticky md:top-4">
             <div className={`border-4 border-black p-4 shadow-brutal text-white ${bannerBg}`}>
               <h2 className="text-xl font-black underline">VIBE CHECK</h2>
@@ -400,12 +391,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* MIDDLE MAIN CARD FEED */}
           <div className="md:col-span-6 flex flex-col gap-8">
             <div className={`border-4 border-black p-6 ${boxBg}`}>
               <h2 className="text-xl font-black uppercase mb-4 tracking-tight">POST_TO_{activeCategory}</h2>
               
-              {/* AI Meme Generation Toolbar */}
               <div className="mb-4 flex gap-2">
                 <input 
                   type="text" 
@@ -463,7 +452,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* STICKY RULES */}
           <div className="md:col-span-3 md:sticky md:top-4">
             <div className={`border-4 p-5 shadow-brutal md:rotate-2 ${stickyBg}`}>
               <h3 className="text-xl font-black border-b-2 border-current pb-2 mb-4 tracking-tight">{rulesTitle}</h3>

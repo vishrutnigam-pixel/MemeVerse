@@ -84,25 +84,35 @@ app.post('/api/memes', async (req, res) => {
   }
 });
 
-// AI Meme Generator Route (Supports captions, static images, and GIFs)
+// Smart AI Meme & GIF Generator Route
 app.post('/api/ai/generate', async (req, res) => {
   const { prompt } = req.body;
   try {
-    const memeAssets = [
-      "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&auto=format&fit=crop&q=60",
-      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60",
-      "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
-      "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
-      "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&auto=format&fit=crop&q=60"
-    ];
-    
-    const randomAsset = memeAssets[Math.floor(Math.random() * memeAssets.length)];
-    const generatedCaption = `POV: When you prompt "${prompt || 'coding'}" and the server instantly ratio'd your entire life.`;
+    const lowerPrompt = (prompt || '').toLowerCase();
+    let selectedImage = "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif";
+
+    if (lowerPrompt.includes('cat') || lowerPrompt.includes('dance') || lowerPrompt.includes('kitten')) {
+      selectedImage = "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif";
+    } else if (lowerPrompt.includes('code') || lowerPrompt.includes('bug') || lowerPrompt.includes('error') || lowerPrompt.includes('exam')) {
+      selectedImage = "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif";
+    } else if (lowerPrompt.includes('hack') || lowerPrompt.includes('matrix') || lowerPrompt.includes('cyber')) {
+      selectedImage = "https://media.giphy.com/media/10JhviFuU2gWI6/giphy.gif";
+    } else {
+      const memeGifs = [
+        "https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif",
+        "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+        "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif",
+        "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif"
+      ];
+      selectedImage = memeGifs[Math.floor(Math.random() * memeGifs.length)];
+    }
+
+    const generatedCaption = `POV: When you generate "${prompt}" and reality immediately breaks.`;
 
     res.json({
       success: true,
       caption: generatedCaption,
-      imageUrl: randomAsset
+      imageUrl: selectedImage
     });
   } catch (err) {
     console.error('AI generation error:', err);
