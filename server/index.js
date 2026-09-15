@@ -84,33 +84,28 @@ app.post('/api/memes', async (req, res) => {
   }
 });
 
-// Smart AI Meme & GIF Generator Route with Diverse Pool & Taglines
+// Smart AI Meme & GIF Generator Route with Bulletproof Image URLs
 app.post('/api/ai/generate', async (req, res) => {
   const { prompt } = req.body;
   try {
     const lowerPrompt = (prompt || '').toLowerCase();
     
-    // Expanded reliable meme & reaction GIF pool categorized by themes
+    // Stable, reliable meme image pool preventing broken link placeholders
     const memePools = {
       coding: [
-        "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif",
-        "https://media.giphy.com/media/XbydQW20p3zTW/giphy.gif",
-        "https://media.giphy.com/media/9JkNBO94vj507vFwL1/giphy.gif"
+        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80"
       ],
       cats: [
-        "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
-        "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
-        "https://media.giphy.com/media/5VKbvrjxpUJCM/giphy.gif"
+        "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=600&auto=format&fit=crop&q=80"
       ],
       hacking: [
-        "https://media.giphy.com/media/10JhviFuU2gWI6/giphy.gif",
-        "https://media.giphy.com/media/ZOwV9pYt0n39f7nE2i/giphy.gif"
+        "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&auto=format&fit=crop&q=80"
       ],
       chaos: [
-        "https://media.giphy.com/media/9J7tdYltWyXII/giphy.gif",
-        "https://media.giphy.com/media/5nsiFvjui0HZe/giphy.gif",
-        "https://media.giphy.com/media/7rj2Zgtt3gomY/giphy.gif",
-        "https://media.giphy.com/media/QMHoU66sBXqqLqYvGO/giphy.gif"
+        "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
       ]
     };
 
@@ -121,18 +116,18 @@ app.post('/api/ai/generate', async (req, res) => {
     if (lowerPrompt.includes('cat') || lowerPrompt.includes('dance') || lowerPrompt.includes('kitten') || lowerPrompt.includes('pet')) {
       const pool = memePools.cats;
       selectedImage = pool[Math.floor(Math.random() * pool.length)];
-      topText = `WHEN YOU CODE ALL NIGHT`;
-      bottomText = `AND THE CAT WALKS ON THE KEYBOARD`;
+      topText = `ME: I WILL JUST PET THE CAT`;
+      bottomText = `3 HOURS LATER: STILL SITTING HERE`;
     } else if (lowerPrompt.includes('code') || lowerPrompt.includes('bug') || lowerPrompt.includes('error') || lowerPrompt.includes('exam') || lowerPrompt.includes('fail')) {
       const pool = memePools.coding;
       selectedImage = pool[Math.floor(Math.random() * pool.length)];
-      topText = `FIXING ONE BUG`;
-      bottomText = `CREATING 47 NEW ONES`;
+      topText = `IT WORKS ON MY MACHINE`;
+      bottomText = `PRODUCTION ENVIRONMENT ON FIRE`;
     } else if (lowerPrompt.includes('hack') || lowerPrompt.includes('matrix') || lowerPrompt.includes('cyber') || lowerPrompt.includes('terminal')) {
       const pool = memePools.hacking;
       selectedImage = pool[Math.floor(Math.random() * pool.length)];
-      topText = `INSPECTION ELEMENT`;
-      bottomText = `HACKERMAN`;
+      topText = `TYPING FAST`;
+      bottomText = `TO LOOK PRODUCTIVE`;
     } else {
       const allPools = [...memePools.chaos, ...memePools.coding, ...memePools.cats];
       selectedImage = allPools[Math.floor(Math.random() * allPools.length)];
