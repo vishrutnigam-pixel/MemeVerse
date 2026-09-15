@@ -83,7 +83,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [user, setUser] = useState(localStorage.getItem('username') || '');
   const [isRegistering, setIsRegistering] = useState(false);
-  const [authForm, setAuthForm] = useState({ username: '', password: '' });
+  const [authForm, setAuthForm] = useState({ username: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [backendError, setBackendError] = useState(false);
 
@@ -108,7 +108,17 @@ export default function App() {
       const res = await fetch(`${API_BASE}/api/memes`);
       if (res.ok) {
         const data = await res.json();
-        setPosts(data.length > 0 ? data : getDefaultMemes());
+        const formattedMemes = (data.memes || data).map(m => ({
+          id: m.id,
+          caption: m.title || m.caption,
+          image: m.image_url || m.image,
+          category: activeCategory,
+          type: 'fresh',
+          timestamp: 'JUST NOW',
+          votes: m.likes || 0,
+          comments: []
+        }));
+        setPosts(formattedMemes.length > 0 ? formattedMemes : getDefaultMemes());
       } else {
         setBackendError(true);
         setPosts(getDefaultMemes());
@@ -144,10 +154,10 @@ export default function App() {
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
-    const endpoint = isRegistering ? 'register' : 'login';
+    const endpoint = isRegistering ? 'signup' : 'login';
 
     try {
-      const response = await fetch(`${API_BASE}/api/auth/${endpoint}`, {
+      const response = await fetch(`${API_BASE}/api/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm),
@@ -157,13 +167,13 @@ export default function App() {
       if (!response.ok) throw new Error(data.error || 'Authentication aborted');
 
       if (isRegistering) {
-        alert('Registration complete! Switching to login mode.');
+        alert('Registration complete! Please log in.');
         setIsRegistering(false);
       } else {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('username', data.username);
-        setToken(data.token);
-        setUser(data.username);
+        localStorage.setItem('token', data.user.id);
+        localStorage.setItem('username', data.user.username);
+        setToken(String(data.user.id));
+        setUser(data.user.username);
       }
     } catch (err) {
       setAuthError(err.message);
@@ -182,23 +192,9 @@ export default function App() {
     if (!aiPrompt.trim()) return alert("Enter a prompt for AI generation!");
     setGeneratingAi(true);
     try {
-      const response = await fetch(`${API_BASE}/api/ai/generate`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ prompt: aiPrompt })
-      });
-      const data = await response.json();
-      if (response.ok && data.imageUrl) {
-        setPreviewUrl(data.imageUrl);
-        setCaption(aiPrompt);
-        setAiPrompt('');
-      } else {
-        setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
-        setCaption(aiPrompt);
-      }
+      setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
+      setCaption(aiPrompt);
+      setAiPrompt('');
     } catch (err) {
       setPreviewUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60");
     } finally {
@@ -253,44 +249,30 @@ export default function App() {
   const handleLaunch = async () => {
     if (!previewUrl && !caption.trim()) return alert("Enter text or attach an image file!");
     const newPost = {
-      id: Date.now(),
-      caption: caption || "System override description _",
-      image: previewUrl || null,
-      category: activeCategory,
-      type: currentPage,
-      timestamp: "JUST NOW",
-      votes: 1,
-      comments: []
+      title: caption || "System override description _",
+      image_url: previewUrl || "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&auto=format&fit=crop&q=60",
+      top_text: "",
+      bottom_text: "",
+      creator_email: user
     };
 
     try {
       await fetch(`${API_BASE}/api/memes`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPost)
       });
+      fetchMemes();
     } catch (err) {
-      console.error("Backend sync failed, updating local state only.");
+      console.error("Backend sync failed");
     }
 
-    setPosts([newPost, ...posts]);
     setCaption('');
     setPreviewUrl('');
   };
 
   const handleVote = async (id) => {
     setPosts(posts.map(p => p.id === id ? { ...p, votes: p.votes + 1 } : p));
-    try {
-      await fetch(`${API_BASE}/api/memes/${id}/vote`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-    } catch (err) {
-      console.error("Vote sync error");
-    }
   };
 
   const handleAddComment = async (id) => {
@@ -298,18 +280,6 @@ export default function App() {
     const newComment = { id: Date.now(), text: commentText, author: user };
     setPosts(posts.map(p => p.id === id ? { ...p, comments: [...p.comments, newComment] } : p));
     setCommentText('');
-    try {
-      await fetch(`${API_BASE}/api/memes/${id}/comment`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ text: commentText })
-      });
-    } catch (err) {
-      console.error("Comment sync error");
-    }
   };
 
   const filteredPosts = posts.filter(post => post.category === activeCategory);
@@ -336,6 +306,19 @@ export default function App() {
                 placeholder="ENTER_USERNAME..."
               />
             </div>
+            {isRegistering && (
+              <div>
+                <label className="block text-xs font-black uppercase mb-1">EMAIL_ADDRESS:</label>
+                <input 
+                  type="email" 
+                  required
+                  value={authForm.email}
+                  onChange={e => setAuthForm({ ...authForm, email: e.target.value })}
+                  className="w-full border-2 border-black p-3 font-mono font-bold focus:bg-yellow-50 focus:outline-none" 
+                  placeholder="ENTER_EMAIL..."
+                />
+              </div>
+            )}
             <div>
               <label className="block text-xs font-black uppercase mb-1">ACCESS_CODE_KEY:</label>
               <input 
@@ -350,7 +333,7 @@ export default function App() {
 
             {authError && <div className="border-2 border-black bg-red-400 text-black font-bold text-xs p-2 uppercase">{authError}</div>}
 
-            <button type="submit" className="w-full border-4 border-black bg-black text-[#E4FF00] font-black py-3 uppercase shadow-brutal hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer">
+            <button type="submit" className="w-full border-4 border-black bg-black text-[#E4FF00] font-black py-4 uppercase shadow-brutal hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer">
               {isRegistering ? 'EXECUTE_SIGNUP_ 💾' : 'ACCESS_SYSTEM_ 🚀'}
             </button>
           </form>
